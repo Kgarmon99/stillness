@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stillness | Personal Meditation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #000000;
+      --accent: #43ff64;
+      --accent-dim: #2db84a;
+      --accent-glow: rgba(67, 255, 100, 0.3);
+      --text: #ffffff;
+      --text-dim: #888888;
+      --text-muted: #444444;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Space Grotesk', system-ui, sans-serif;
+      min-height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      letter-spacing: -0.02em;
+    }
+
+    /* Ambient grid background */
+    .grid-bg {
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(67, 255, 100, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(67, 255, 100, 0.03) 1px, transparent 1px);
+      background-size: 60px 60px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Breathing orb */
+    .orb-container {
+      position: relative;
+      width: 280px;
+      height: 280px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1;
+    }
+
+    .orb {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, rgba(67, 255, 100, 0.8), rgba(67, 255, 100, 0.2) 60%, transparent 70%);
+      box-shadow:
+        0 0 60px rgba(67, 255, 100, 0.4),
+        0 0 120px rgba(67, 255, 100, 0.2),
+        0 0 200px rgba(67, 255, 100, 0.1);
+      transition: transform 0.1s ease-out;
+      cursor: pointer;
+    }
+
+    .orb.inhale {
+      animation: inhale var(--inhale-duration, 4s) ease-in-out forwards;
+    }
+
+    .orb.hold {
+      animation: hold var(--hold-duration, 4s) ease-in-out forwards;
+    }
+
+    .orb.exhale {
+      animation: exhale var(--exhale-duration, 4s) ease-in-out forwards;
+    }
+
+    @keyframes inhale {
+      from { transform: scale(1); }
+      to { transform: scale(1.8); }
+    }
+
+    @keyframes hold {
+      from { transform: scale(1.8); }
+      to { transform: scale(1.8); }
+    }
+
+    @keyframes exhale {
+      from { transform: scale(1.8); }
+      to { transform: scale(1); }
+    }
+
+    /* Phase label */
+    .phase-label {
+      position: absolute;
+      bottom: -60px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      opacity: 0.7;
+    }
+
+    /* Timer display */
+    .timer {
+      position: absolute;
+      top: 40px;
+      right: 40px;
+      font-size: 13px;
+      color: var(--text-muted);
+      font-weight: 400;
+      letter-spacing: 0.05em;
+      z-index: 1;
+    }
+
+    /* Controls */
+    .controls {
+      position: fixed;
+      bottom: 60px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 24px;
+      align-items: center;
+      z-index: 1;
+    }
+
+    .btn {
+      background: transparent;
+      border: 1px solid rgba(67, 255, 100, 0.2);
+      color: var(--text-dim);
+      padding: 12px 28px;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border-radius: 4px;
+    }
+
+    .btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      box-shadow: 0 0 20px rgba(67, 255, 100, 0.15);
+    }
+
+    .btn.active {
+      background: rgba(67, 255, 100, 0.1);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* Duration selector */
+    .duration-selector {
+      position: fixed;
+      top: 40px;
+      left: 40px;
+      display: flex;
+      gap: 12px;
+      z-index: 1;
+    }
+
+    .duration-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      cursor: pointer;
+      padding: 4px 8px;
+      transition: color 0.3s ease;
+    }
+
+    .duration-btn:hover,
+    .duration-btn.active {
+      color: var(--accent);
+    }
+
+    /* Technique selector */
+    .technique-selector {
+      position: fixed;
+      bottom: 120px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 20px;
+      z-index: 1;
+    }
+
+    .technique-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
+      padding: 4px 0;
+      transition: color 0.3s ease;
+      position: relative;
+    }
+
+    .technique-btn::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      width: 0;
+      height: 1px;
+      background: var(--accent);
+      transition: width 0.3s ease;
+    }
+
+    .technique-btn:hover,
+    .technique-btn.active {
+      color: var(--accent);
+    }
+
+    .technique-btn.active::after {
+      width: 100%;
+    }
+
+    /* Sound toggle */
+    .sound-toggle {
+      position: fixed;
+      bottom: 40px;
+      right: 40px;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 18px;
+      cursor: pointer;
+      z-index: 1;
+      transition: color 0.3s ease;
+    }
+
+    .sound-toggle:hover,
+    .sound-toggle.active {
+      color: var(--accent);
+    }
+
+    /* Start overlay */
+    .start-overlay {
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      transition: opacity 0.8s ease;
+    }
+
+    .start-overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .start-title {
+      font-size: 48px;
+      font-weight: 700;
+      letter-spacing: -0.04em;
+      margin-bottom: 16px;
+    }
+
+    .start-subtitle {
+      font-size: 14px;
+      color: var(--text-dim);
+      margin-bottom: 48px;
+      letter-spacing: 0.05em;
+    }
+
+    .start-btn {
+      background: transparent;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      padding: 16px 48px;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border-radius: 4px;
+    }
+
+    .start-btn:hover {
+      background: rgba(67, 255, 100, 0.1);
+      box-shadow: 0 0 40px rgba(67, 255, 100, 0.2);
+    }
+
+    /* Completion message */
+    .complete-message {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 5;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 1s ease;
+    }
+
+    .complete-message.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .complete-message h2 {
+      font-size: 32px;
+      font-weight: 600;
+      letter-spacing: -0.03em;
+      margin-bottom: 16px;
+    }
+
+    .complete-message p {
+      font-size: 14px;
+      color: var(--text-dim);
+    }
+  </style>
+</head>
+<body>
+  <div class="grid-bg"></div>
+
+  <!-- Start Overlay -->
+  <div class="start-overlay" id="startOverlay">
+    <h1 class="start-title">Stillness</h1>
+    <p class="start-subtitle">Personal meditation space</p>
+    <button class="start-btn" onclick="startApp()">Begin</button>
+  </div>
+
+  <!-- Completion Message -->
+  <div class="complete-message" id="completeMessage">
+    <h2>Session Complete</h2>
+    <p>Carry this calm with you</p>
+  </div>
+
+  <!-- Duration Selector -->
+  <div class="duration-selector">
+    <button class="duration-btn active" data-min="5" onclick="setDuration(5)">5m</button>
+    <button class="duration-btn" data-min="10" onclick="setDuration(10)">10m</button>
+    <button class="duration-btn" data-min="20" onclick="setDuration(20)">20m</button>
+    <button class="duration-btn" data-min="30" onclick="setDuration(30)">30m</button>
+  </div>
+
+  <!-- Timer -->
+  <div class="timer" id="timer">05:00</div>
+
+  <!-- Breathing Orb -->
+  <div class="orb-container">
+    <div class="orb" id="orb"></div>
+    <div class="phase-label" id="phaseLabel">Ready</div>
+  </div>
+
+  <!-- Technique Selector -->
+  <div class="technique-selector">
+    <button class="technique-btn active" data-tech="box" onclick="setTechnique('box')">Box</button>
+    <button class="technique-btn" data-tech="478" onclick="setTechnique('478')">4-7-8</button>
+    <button class="technique-btn" data-tech="coherent" onclick="setTechnique('coherent')">Coherent</button>
+    <button class="technique-btn" data-tech="simple" onclick="setTechnique('simple')">Simple</button>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls">
+    <button class="btn" id="playBtn" onclick="togglePlay()">Start</button>
+    <button class="btn" onclick="resetSession()">Reset</button>
+  </div>
+
+  <!-- Sound Toggle -->
+  <button class="sound-toggle" id="soundBtn" onclick="toggleSound()">🔇</button>
+
+  <script>
+    // Techniques configuration
+    const techniques = {
+      box: { inhale: 4, hold: 4, exhale: 4, hold2: 4, name: 'Box Breathing' },
+      '478': { inhale: 4, hold: 7, exhale: 8, hold2: 0, name: '4-7-8 Relax' },
+      coherent: { inhale: 5.5, hold: 0, exhale: 5.5, hold2: 0, name: 'Coherent' },
+      simple: { inhale: 4, hold: 0, exhale: 6, hold2: 0, name: 'Simple' }
+    };
+
+    let currentTechnique = 'box';
+    let duration = 5; // minutes
+    let isPlaying = false;
+    let isSoundOn = false;
+    let timeRemaining = duration * 60;
+    let breathingInterval = null;
+    let timerInterval = null;
+    let audioCtx = null;
+    let oscillator = null;
+    let gainNode = null;
+
+    const orb = document.getElementById('orb');
+    const phaseLabel = document.getElementById('phaseLabel');
+    const timer = document.getElementById('timer');
+    const playBtn = document.getElementById('playBtn');
+    const soundBtn = document.getElementById('soundBtn');
+
+    function startApp() {
+      document.getElementById('startOverlay').classList.add('hidden');
+    }
+
+    function setDuration(min) {
+      duration = min;
+      timeRemaining = min * 60;
+      updateTimerDisplay();
+      document.querySelectorAll('.duration-btn').forEach(btn => {
+        btn.classList.toggle('active', parseInt(btn.dataset.min) === min);
+      });
+    }
+
+    function setTechnique(tech) {
+      currentTechnique = tech;
+      document.querySelectorAll('.technique-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tech === tech);
+      });
+      if (isPlaying) {
+        stopBreathing();
+        startBreathing();
+      }
+    }
+
+    function updateTimerDisplay() {
+      const min = Math.floor(timeRemaining / 60);
+      const sec = timeRemaining % 60;
+      timer.textContent = `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
+    }
+
+    function togglePlay() {
+      if (isPlaying) {
+        pauseSession();
+      } else {
+        startSession();
+      }
+    }
+
+    function startSession() {
+      isPlaying = true;
+      playBtn.textContent = 'Pause';
+      playBtn.classList.add('active');
+      document.getElementById('completeMessage').classList.remove('visible');
+      startBreathing();
+      startTimer();
+      if (isSoundOn) startTone();
+    }
+
+    function pauseSession() {
+      isPlaying = false;
+      playBtn.textContent = 'Resume';
+      playBtn.classList.remove('active');
+      stopBreathing();
+      clearInterval(timerInterval);
+      stopTone();
+    }
+
+    function resetSession() {
+      isPlaying = false;
+      playBtn.textContent = 'Start';
+      playBtn.classList.remove('active');
+      stopBreathing();
+      clearInterval(timerInterval);
+      timeRemaining = duration * 60;
+      updateTimerDisplay();
+      phaseLabel.textContent = 'Ready';
+      orb.style.transform = 'scale(1)';
+      orb.className = 'orb';
+      document.getElementById('completeMessage').classList.remove('visible');
+      stopTone();
+    }
+
+    function startTimer() {
+      timerInterval = setInterval(() => {
+        timeRemaining--;
+        updateTimerDisplay();
+        if (timeRemaining <= 0) {
+          completeSession();
+        }
+      }, 1000);
+    }
+
+    function completeSession() {
+      pauseSession();
+      playBtn.textContent = 'Start';
+      document.getElementById('completeMessage').classList.add('visible');
+      timeRemaining = duration * 60;
+      updateTimerDisplay();
+    }
+
+    function startBreathing() {
+      const tech = techniques[currentTechnique];
+      runBreathCycle(tech);
+      const cycleTime = (tech.inhale + tech.hold + tech.exhale + tech.hold2) * 1000;
+      breathingInterval = setInterval(() => runBreathCycle(tech), cycleTime);
+    }
+
+    function runBreathCycle(tech) {
+      // Inhale
+      phaseLabel.textContent = 'Inhale';
+      orb.style.transition = `transform ${tech.inhale}s ease-in-out`;
+      orb.style.transform = 'scale(1.8)';
+
+      setTimeout(() => {
+        if (!isPlaying) return;
+        // Hold
+        if (tech.hold > 0) {
+          phaseLabel.textContent = 'Hold';
+        }
+
+        setTimeout(() => {
+          if (!isPlaying) return;
+          // Exhale
+          phaseLabel.textContent = 'Exhale';
+          orb.style.transition = `transform ${tech.exhale}s ease-in-out`;
+          orb.style.transform = 'scale(1)';
+
+          setTimeout(() => {
+            if (!isPlaying) return;
+            // Hold 2
+            if (tech.hold2 > 0) {
+              phaseLabel.textContent = 'Hold';
+            }
+          }, tech.exhale * 1000);
+        }, tech.hold * 1000);
+      }, tech.inhale * 1000);
+    }
+
+    function stopBreathing() {
+      clearInterval(breathingInterval);
+      const timeouts = setTimeout(() => {}, 0);
+      for (let i = 0; i < timeouts; i++) {
+        clearTimeout(i);
+      }
+    }
+
+    // Audio tone generation
+    function toggleSound() {
+      isSoundOn = !isSoundOn;
+      soundBtn.textContent = isSoundOn ? '🔊' : '🔇';
+      soundBtn.classList.toggle('active', isSoundOn);
+      if (isSoundOn && isPlaying) {
+        startTone();
+      } else {
+        stopTone();
+      }
+    }
+
+    function startTone() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      oscillator = audioCtx.createOscillator();
+      gainNode = audioCtx.createGain();
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      oscillator.frequency.value = 174; // Deep relaxation frequency
+      oscillator.type = 'sine';
+      gainNode.gain.value = 0.03;
+      oscillator.start();
+    }
+
+    function stopTone() {
+      if (oscillator) {
+        oscillator.stop();
+        oscillator = null;
+      }
+    }
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'Space') {
+        e.preventDefault();
+        togglePlay();
+      }
+      if (e.code === 'KeyR') {
+        resetSession();
+      }
+      if (e.code === 'KeyM') {
+        toggleSound();
+      }
+    });
+
+    // Initialize
+    updateTimerDisplay();
+  </script>
+</body>
+</html>
