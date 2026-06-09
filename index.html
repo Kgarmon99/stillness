@@ -2,1176 +2,606 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <meta name="theme-color" content="#000000">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Trillionaire">
-  <link rel="manifest" href="manifest.json">
-  <link rel="apple-touch-icon" href="icon-192.png">
-  <title>Trillionaire | Wealth Architecture</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stillness | Personal Meditation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    :root {
+      --bg: #000000;
+      --accent: #43ff64;
+      --accent-dim: #2db84a;
+      --accent-glow: rgba(67, 255, 100, 0.3);
+      --text: #ffffff;
+      --text-dim: #888888;
+      --text-muted: #444444;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
     body {
-      background: #000;
-      color: #fff;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      height: 100dvh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Space Grotesk', system-ui, sans-serif;
+      min-height: 100vh;
       overflow: hidden;
-      touch-action: manipulation;
-    }
-
-    canvas { position: fixed; inset: 0; z-index: 0; }
-
-    /* Grain overlay */
-    .grain {
-      position: fixed;
-      inset: 0;
-      z-index: 2;
-      pointer-events: none;
-      opacity: 0.03;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-    }
-
-    /* XP Bar */
-    .xp-bar {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 3px;
-      background: rgba(255,215,0,0.1);
-      z-index: 15;
-      opacity: 0;
-      transition: opacity 0.5s;
-    }
-    .xp-bar.visible { opacity: 1; }
-    .xp-fill {
-      height: 100%;
-      width: 0%;
-      background: linear-gradient(90deg, rgba(255,215,0,0.6), rgba(255,215,0,1));
-      transition: width 0.5s ease;
-      box-shadow: 0 0 10px rgba(255,215,0,0.3);
-    }
-
-    /* Combo */
-    .combo {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      font-size: 72px;
-      font-weight: 200;
-      color: rgba(255,215,0,0);
-      pointer-events: none;
-      z-index: 25;
-      transition: all 0.3s;
-      text-align: center;
-    }
-    .combo.show {
-      color: rgba(255,215,0,0.9);
-      transform: translate(-50%, -50%) scale(1.2);
-    }
-    .combo-text {
-      font-size: 14px;
-      letter-spacing: 0.3em;
-      text-transform: uppercase;
-      margin-top: 8px;
-    }
-
-    /* Floating XP */
-    .float-xp {
-      position: fixed;
-      pointer-events: none;
-      z-index: 25;
-      font-size: 20px;
-      font-weight: 600;
-      color: rgba(255,215,0,0.9);
-      opacity: 0;
-      transition: all 1s ease-out;
-    }
-    .float-xp.animate {
-      opacity: 1;
-      transform: translateY(-80px);
-    }
-
-    /* UI */
-    .ui {
-      position: fixed;
-      bottom: 12%;
-      left: 0;
-      right: 0;
-      text-align: center;
-      pointer-events: none;
-      z-index: 3;
-    }
-    .phase {
-      font-size: 28px;
-      font-weight: 300;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      opacity: 0;
-      transform: translateY(10px);
-      transition: all 0.5s ease;
-    }
-    .phase.visible { opacity: 1; transform: translateY(0); }
-    .timer {
-      margin-top: 12px;
-      font-size: 11px;
-      color: rgba(255,215,0,0.4);
-      letter-spacing: 0.25em;
-      text-transform: uppercase;
-      opacity: 0;
-      transition: opacity 0.5s;
-    }
-    .timer.visible { opacity: 1; }
-
-    .affirmation {
-      position: fixed;
-      top: 16%;
-      left: 0;
-      right: 0;
-      text-align: center;
-      font-size: 16px;
-      font-weight: 300;
-      color: rgba(255,215,0,0.6);
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      opacity: 0;
-      transform: translateY(-10px);
-      transition: all 0.8s ease;
-      pointer-events: none;
-      z-index: 3;
-      padding: 0 40px;
-      line-height: 1.5;
-    }
-    .affirmation.visible {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    .hint {
-      position: fixed;
-      bottom: 12%;
-      left: 0;
-      right: 0;
-      text-align: center;
-      font-size: 11px;
-      color: rgba(255,215,0,0.35);
-      letter-spacing: 0.25em;
-      text-transform: uppercase;
-      animation: pulse 2.5s ease-in-out infinite;
-      pointer-events: none;
-      z-index: 3;
-    }
-    @keyframes pulse {
-      0%, 100% { opacity: 0.2; }
-      50% { opacity: 0.5; }
-    }
-
-    /* Stats */
-    .stats {
-      position: fixed;
-      top: 24px;
-      left: 24px;
-      right: 24px;
-      display: flex;
-      justify-content: space-between;
-      z-index: 10;
-      opacity: 0;
-      transition: opacity 0.5s;
-    }
-    .stats.visible { opacity: 1; }
-    .stat {
-      font-size: 11px;
-      color: rgba(255,215,0,0.4);
-      letter-spacing: 0.1em;
-    }
-    .stat-value {
-      color: rgba(255,215,0,0.7);
-      font-weight: 600;
-    }
-
-    /* Settings button */
-    .settings-btn {
-      position: fixed;
-      top: 24px;
-      right: 24px;
-      background: none;
-      border: none;
-      color: rgba(255,215,0,0.3);
-      font-size: 18px;
-      cursor: pointer;
-      z-index: 10;
-      padding: 8px;
-      pointer-events: auto;
-    }
-
-    /* Settings overlay */
-    .overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.95);
-      z-index: 20;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.3s;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 32px;
-    }
-    .overlay.open { opacity: 1; pointer-events: auto; }
-    .overlay-close {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      background: none;
-      border: none;
-      color: rgba(255,255,255,0.3);
-      font-size: 28px;
-      cursor: pointer;
-    }
-    .option-group { text-align: center; }
-    .option-label {
-      font-size: 10px;
-      color: rgba(255,255,255,0.3);
-      text-transform: uppercase;
-      letter-spacing: 0.3em;
-      margin-bottom: 12px;
-    }
-    .options { display: flex; gap: 8px; }
-    .option {
-      padding: 10px 20px;
-      border-radius: 100px;
-      border: 1px solid rgba(255,255,255,0.08);
-      background: none;
-      color: rgba(255,255,255,0.35);
-      font-family: inherit;
-      font-size: 13px;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .option.active {
-      border-color: rgba(255,215,0,0.4);
-      color: rgba(255,215,0,0.8);
+      letter-spacing: -0.02em;
     }
 
-    /* Level up overlay */
-    .levelup-overlay {
+    /* Ambient grid background */
+    .grid-bg {
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.9);
-      z-index: 60;
-      opacity: 0;
+      background-image:
+        linear-gradient(rgba(67, 255, 100, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(67, 255, 100, 0.03) 1px, transparent 1px);
+      background-size: 60px 60px;
       pointer-events: none;
-      transition: opacity 0.5s;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 20px;
-    }
-    .levelup-overlay.open {
-      opacity: 1;
-      pointer-events: auto;
-    }
-    .levelup-title {
-      font-size: 14px;
-      color: rgba(255,215,0,0.5);
-      letter-spacing: 0.3em;
-      text-transform: uppercase;
-    }
-    .levelup-level {
-      font-size: 72px;
-      font-weight: 200;
-      color: rgba(255,215,0,1);
-      text-shadow: 0 0 40px rgba(255,215,0,0.3);
-    }
-    .levelup-name {
-      font-size: 18px;
-      color: rgba(255,255,255,0.6);
-      letter-spacing: 0.1em;
-    }
-    .levelup-btn {
-      margin-top: 20px;
-      padding: 14px 40px;
-      border: 1px solid rgba(255,215,0,0.3);
-      background: none;
-      color: rgba(255,215,0,0.8);
-      font-family: inherit;
-      font-size: 12px;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      cursor: pointer;
-      border-radius: 100px;
+      z-index: 0;
     }
 
-    /* Tracker overlay */
-    .tracker-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.95);
-      z-index: 40;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.4s;
+    /* Breathing orb */
+    .orb-container {
+      position: relative;
+      width: 280px;
+      height: 280px;
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 28px;
-      padding: 40px;
+      z-index: 1;
     }
-    .tracker-overlay.open { opacity: 1; pointer-events: auto; }
-    .tracker-title {
-      font-size: 18px;
-      font-weight: 300;
-      color: rgba(255,215,0,0.5);
-      text-transform: uppercase;
-      letter-spacing: 0.2em;
-    }
-    .tracker-grid {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 8px;
-    }
-    .tracker-day {
-      width: 32px;
-      height: 32px;
+
+    .orb {
+      width: 120px;
+      height: 120px;
       border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 10px;
-      border: 1px solid rgba(255,255,255,0.08);
-      color: rgba(255,255,255,0.25);
-    }
-    .tracker-day.done {
-      background: rgba(255,215,0,0.15);
-      border-color: rgba(255,215,0,0.4);
-      color: rgba(255,215,0,0.8);
-    }
-    .tracker-day.today {
-      border-color: rgba(255,215,0,0.6);
-      color: rgba(255,215,0,1);
-      box-shadow: 0 0 10px rgba(255,215,0,0.2);
-    }
-    .tracker-message {
-      font-size: 14px;
-      color: rgba(255,215,0,0.5);
-      text-align: center;
-      font-weight: 300;
-      max-width: 260px;
-      line-height: 1.5;
-    }
-    .tracker-btn {
-      padding: 12px 32px;
-      border: 1px solid rgba(255,215,0,0.25);
-      background: none;
-      color: rgba(255,215,0,0.7);
-      font-family: inherit;
-      font-size: 12px;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
+      background: radial-gradient(circle at 35% 35%, rgba(67, 255, 100, 0.8), rgba(67, 255, 100, 0.2) 60%, transparent 70%);
+      box-shadow:
+        0 0 60px rgba(67, 255, 100, 0.4),
+        0 0 120px rgba(67, 255, 100, 0.2),
+        0 0 200px rgba(67, 255, 100, 0.1);
+      transition: transform 0.1s ease-out;
       cursor: pointer;
-      border-radius: 100px;
-      transition: all 0.3s;
-    }
-    .tracker-btn:hover {
-      border-color: rgba(255,215,0,0.5);
-      color: rgba(255,215,0,1);
     }
 
-    /* Completion */
-    .completion {
+    .orb.inhale {
+      animation: inhale var(--inhale-duration, 4s) ease-in-out forwards;
+    }
+
+    .orb.hold {
+      animation: hold var(--hold-duration, 4s) ease-in-out forwards;
+    }
+
+    .orb.exhale {
+      animation: exhale var(--exhale-duration, 4s) ease-in-out forwards;
+    }
+
+    @keyframes inhale {
+      from { transform: scale(1); }
+      to { transform: scale(1.8); }
+    }
+
+    @keyframes hold {
+      from { transform: scale(1.8); }
+      to { transform: scale(1.8); }
+    }
+
+    @keyframes exhale {
+      from { transform: scale(1.8); }
+      to { transform: scale(1); }
+    }
+
+    /* Phase label */
+    .phase-label {
+      position: absolute;
+      bottom: -60px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      opacity: 0.7;
+    }
+
+    /* Timer display */
+    .timer {
+      position: absolute;
+      top: 40px;
+      right: 40px;
+      font-size: 13px;
+      color: var(--text-muted);
+      font-weight: 400;
+      letter-spacing: 0.05em;
+      z-index: 1;
+    }
+
+    /* Controls */
+    .controls {
+      position: fixed;
+      bottom: 60px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 24px;
+      align-items: center;
+      z-index: 1;
+    }
+
+    .btn {
+      background: transparent;
+      border: 1px solid rgba(67, 255, 100, 0.2);
+      color: var(--text-dim);
+      padding: 12px 28px;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border-radius: 4px;
+    }
+
+    .btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      box-shadow: 0 0 20px rgba(67, 255, 100, 0.15);
+    }
+
+    .btn.active {
+      background: rgba(67, 255, 100, 0.1);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* Duration selector */
+    .duration-selector {
+      position: fixed;
+      top: 40px;
+      left: 40px;
+      display: flex;
+      gap: 12px;
+      z-index: 1;
+    }
+
+    .duration-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      cursor: pointer;
+      padding: 4px 8px;
+      transition: color 0.3s ease;
+    }
+
+    .duration-btn:hover,
+    .duration-btn.active {
+      color: var(--accent);
+    }
+
+    /* Technique selector */
+    .technique-selector {
+      position: fixed;
+      bottom: 120px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 20px;
+      z-index: 1;
+    }
+
+    .technique-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
+      padding: 4px 0;
+      transition: color 0.3s ease;
+      position: relative;
+    }
+
+    .technique-btn::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      width: 0;
+      height: 1px;
+      background: var(--accent);
+      transition: width 0.3s ease;
+    }
+
+    .technique-btn:hover,
+    .technique-btn.active {
+      color: var(--accent);
+    }
+
+    .technique-btn.active::after {
+      width: 100%;
+    }
+
+    /* Sound toggle */
+    .sound-toggle {
+      position: fixed;
+      bottom: 40px;
+      right: 40px;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 18px;
+      cursor: pointer;
+      z-index: 1;
+      transition: color 0.3s ease;
+    }
+
+    .sound-toggle:hover,
+    .sound-toggle.active {
+      color: var(--accent);
+    }
+
+    /* Start overlay */
+    .start-overlay {
       position: fixed;
       inset: 0;
-      z-index: 30;
-      pointer-events: none;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      transition: opacity 0.8s ease;
+    }
+
+    .start-overlay.hidden {
       opacity: 0;
-      transition: opacity 1s;
+      pointer-events: none;
     }
-    .completion.show { opacity: 1; }
-    .completion-text {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      text-align: center;
-    }
-    .completion-icon {
-      font-size: 56px;
+
+    .start-title {
+      font-size: 48px;
+      font-weight: 700;
+      letter-spacing: -0.04em;
       margin-bottom: 16px;
     }
-    .completion-sub {
-      font-size: 13px;
-      color: rgba(255,215,0,0.5);
-      letter-spacing: 0.2em;
+
+    .start-subtitle {
+      font-size: 14px;
+      color: var(--text-dim);
+      margin-bottom: 48px;
+      letter-spacing: 0.05em;
+    }
+
+    .start-btn {
+      background: transparent;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      padding: 16px 48px;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      letter-spacing: 0.12em;
       text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border-radius: 4px;
+    }
+
+    .start-btn:hover {
+      background: rgba(67, 255, 100, 0.1);
+      box-shadow: 0 0 40px rgba(67, 255, 100, 0.2);
+    }
+
+    /* Completion message */
+    .complete-message {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 5;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 1s ease;
+    }
+
+    .complete-message.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .complete-message h2 {
+      font-size: 32px;
+      font-weight: 600;
+      letter-spacing: -0.03em;
+      margin-bottom: 16px;
+    }
+
+    .complete-message p {
+      font-size: 14px;
+      color: var(--text-dim);
     }
   </style>
 </head>
 <body>
-  <div class="grain"></div>
-  <canvas id="c"></canvas>
+  <div class="grid-bg"></div>
 
-  <!-- XP Bar -->
-  <div class="xp-bar" id="xpBar">
-    <div class="xp-fill" id="xpFill"></div>
+  <!-- Start Overlay -->
+  <div class="start-overlay" id="startOverlay">
+    <h1 class="start-title">Stillness</h1>
+    <p class="start-subtitle">Personal meditation space</p>
+    <button class="start-btn" onclick="startApp()">Begin</button>
   </div>
 
-  <!-- Combo -->
-  <div class="combo" id="combo">
-    <div id="comboNumber">3</div>
-    <div class="combo-text">Day Streak</div>
+  <!-- Completion Message -->
+  <div class="complete-message" id="completeMessage">
+    <h2>Session Complete</h2>
+    <p>Carry this calm with you</p>
   </div>
 
-  <div class="ui" id="ui">
-    <div class="phase" id="phase">Inhale</div>
-    <div class="timer" id="timer">03:00</div>
+  <!-- Duration Selector -->
+  <div class="duration-selector">
+    <button class="duration-btn active" data-min="5" onclick="setDuration(5)">5m</button>
+    <button class="duration-btn" data-min="10" onclick="setDuration(10)">10m</button>
+    <button class="duration-btn" data-min="20" onclick="setDuration(20)">20m</button>
+    <button class="duration-btn" data-min="30" onclick="setDuration(30)">30m</button>
   </div>
 
-  <div class="affirmation" id="affirmation"></div>
-  <div class="hint" id="hint">Tap to architect wealth</div>
+  <!-- Timer -->
+  <div class="timer" id="timer">05:00</div>
 
-  <div class="stats" id="stats">
-    <div class="stat">Streak: <span class="stat-value" id="streakCount">0</span></div>
-    <div class="stat">Score: <span class="stat-value" id="scoreDisplay">0</span></div>
-    <div class="stat">Level: <span class="stat-value" id="levelDisplay">1</span></div>
+  <!-- Breathing Orb -->
+  <div class="orb-container">
+    <div class="orb" id="orb"></div>
+    <div class="phase-label" id="phaseLabel">Ready</div>
   </div>
 
-  <button class="settings-btn" id="settingsBtn">⋯</button>
-
-  <div class="overlay" id="overlay">
-    <button class="overlay-close" id="closeBtn">×</button>
-    <div class="option-group">
-      <div class="option-label">Duration</div>
-      <div class="options">
-        <button class="option active" data-dur="1">1m</button>
-        <button class="option" data-dur="3">3m</button>
-        <button class="option" data-dur="5">5m</button>
-        <button class="option" data-dur="10">10m</button>
-      </div>
-    </div>
-    <div class="option-group">
-      <div class="option-label">Speed</div>
-      <div class="options">
-        <button class="option" data-bpm="4">Slow</button>
-        <button class="option active" data-bpm="6">Normal</button>
-        <button class="option" data-bpm="8">Fast</button>
-      </div>
-    </div>
-    <div class="option-group">
-      <div class="option-label">Audio</div>
-      <div class="options">
-        <button class="option active" data-audio="off">Off</button>
-        <button class="option" data-audio="drone">Drone</button>
-        <button class="option" data-audio="wealth">Wealth</button>
-      </div>
-    </div>
+  <!-- Technique Selector -->
+  <div class="technique-selector">
+    <button class="technique-btn active" data-tech="box" onclick="setTechnique('box')">Box</button>
+    <button class="technique-btn" data-tech="478" onclick="setTechnique('478')">4-7-8</button>
+    <button class="technique-btn" data-tech="coherent" onclick="setTechnique('coherent')">Coherent</button>
+    <button class="technique-btn" data-tech="simple" onclick="setTechnique('simple')">Simple</button>
   </div>
 
-  <!-- Level Up -->
-  <div class="levelup-overlay" id="levelupOverlay">
-    <div class="levelup-title">Level Up</div>
-    <div class="levelup-level" id="levelupLevel">2</div>
-    <div class="levelup-name" id="levelupName">Wealth Architect</div>
-    <button class="levelup-btn" id="levelupBtn">Continue</button>
+  <!-- Controls -->
+  <div class="controls">
+    <button class="btn" id="playBtn" onclick="togglePlay()">Start</button>
+    <button class="btn" onclick="resetSession()">Reset</button>
   </div>
 
-  <div class="tracker-overlay" id="trackerOverlay">
-    <div class="tracker-title">Your Empire Blueprint</div>
-    <div class="tracker-grid" id="trackerGrid"></div>
-    <div class="tracker-message" id="trackerMessage"></div>
-    <button class="tracker-btn" id="trackerBtn">Continue</button>
-  </div>
-
-  <div class="completion" id="completion">
-    <div class="completion-text">
-      <div class="completion-icon">👑</div>
-      <div class="completion-sub">Empire Activated</div>
-    </div>
-  </div>
+  <!-- Sound Toggle -->
+  <button class="sound-toggle" id="soundBtn" onclick="toggleSound()">🔇</button>
 
   <script>
-    // ===== AUDIO =====
-    let audioCtx = null;
-    let audioMode = 'off';
-    let activeNodes = [];
-    let ambienceInterval = null;
-
-    function initAudio() {
-      if (audioCtx) return;
-      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    }
-
-    function startAmbience() {
-      if (!audioCtx) initAudio();
-      stopAmbience();
-      if (audioMode === 'off') return;
-      if (audioCtx.state === 'suspended') audioCtx.resume();
-
-      const freqs = audioMode === 'wealth' 
-        ? [261.63, 329.63, 392.00, 493.88, 174.61]
-        : [174.61, 261.63, 329.63, 392.00, 493.88];
-      const volumes = [0.04, 0.02, 0.02, 0.02, 0.02];
-
-      freqs.forEach((freq, i) => {
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        const filter = audioCtx.createBiquadFilter();
-
-        osc.type = 'sine';
-        osc.frequency.value = freq;
-        osc.detune.value = (Math.random() - 0.5) * 8;
-
-        filter.type = 'lowpass';
-        filter.frequency.value = 600;
-        filter.Q.value = 1;
-
-        osc.connect(filter);
-        filter.connect(gain);
-        gain.connect(audioCtx.destination);
-
-        gain.gain.value = 0;
-        gain.gain.linearRampToValueAtTime(volumes[i], audioCtx.currentTime + 2);
-
-        osc.start();
-        activeNodes.push({ osc, gain, filter, baseFreq: freq });
-      });
-
-      let sweepTime = 0;
-      ambienceInterval = setInterval(() => {
-        sweepTime += 0.05;
-        activeNodes.forEach(node => {
-          const sweep = 500 + Math.sin(sweepTime) * 300;
-          node.filter.frequency.setTargetAtTime(sweep, audioCtx.currentTime, 1);
-        });
-      }, 50);
-    }
-
-    function stopAmbience() {
-      if (ambienceInterval) { clearInterval(ambienceInterval); ambienceInterval = null; }
-      activeNodes.forEach(node => {
-        try {
-          node.gain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.5);
-        } catch(e) {}
-      });
-      setTimeout(() => {
-        activeNodes.forEach(node => {
-          try { node.osc.stop(); } catch(e) {}
-        });
-        activeNodes = [];
-      }, 600);
-    }
-
-    function updateAmbience(scale) {
-      if (audioMode === 'off' || activeNodes.length === 0) return;
-      activeNodes.forEach(node => {
-        const target = node.baseFreq * (1 + (scale - 0.3) * 0.03);
-        node.osc.frequency.setTargetAtTime(target, audioCtx.currentTime, 0.3);
-      });
-    }
-
-    function playBell() {
-      if (!audioCtx) return;
-      [523.25, 659.25, 783.99].forEach((freq, i) => {
-        setTimeout(() => {
-          const osc = audioCtx.createOscillator();
-          const g = audioCtx.createGain();
-          osc.connect(g);
-          g.connect(audioCtx.destination);
-          osc.frequency.value = freq;
-          osc.type = 'sine';
-          g.gain.value = 0.05;
-          g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 3);
-          osc.start();
-          osc.stop(audioCtx.currentTime + 3);
-        }, i * 150);
-      });
-    }
-
-    function playLevelUpSound() {
-      if (!audioCtx) return;
-      [440, 554, 659, 880].forEach((freq, i) => {
-        setTimeout(() => {
-          const osc = audioCtx.createOscillator();
-          const g = audioCtx.createGain();
-          osc.connect(g);
-          g.connect(audioCtx.destination);
-          osc.frequency.value = freq;
-          osc.type = 'sine';
-          g.gain.value = 0.06;
-          g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 2);
-          osc.start();
-          osc.stop(audioCtx.currentTime + 2);
-        }, i * 100);
-      });
-    }
-
-    // ===== CANVAS =====
-    const canvas = document.getElementById('c');
-    const ctx = canvas.getContext('2d');
-    let W, H, cx, cy;
-
-    function resize() {
-      W = canvas.width = window.innerWidth;
-      H = canvas.height = window.innerHeight;
-      cx = W / 2;
-      cy = H / 2;
-    }
-    resize();
-    window.addEventListener('resize', resize);
-
-    let breathPhase = 'idle';
-    let breathProgress = 0;
-    let breathSpeed = 0.008;
-    let currentScale = 0.3;
-    let time = 0;
-
-    const flowerPetals = [];
-    function buildFlower() {
-      flowerPetals.length = 0;
-      flowerPetals.push({ x: 0, y: 0, layer: 0 });
-      for (let i = 0; i < 6; i++) {
-        const a = (i / 6) * Math.PI * 2 - Math.PI / 2;
-        flowerPetals.push({ x: Math.cos(a), y: Math.sin(a), layer: 1 });
-      }
-      for (let i = 0; i < 12; i++) {
-        const a = (i / 12) * Math.PI * 2 - Math.PI / 2;
-        const d = i % 2 === 0 ? 2 : 1.732;
-        flowerPetals.push({ x: Math.cos(a) * d, y: Math.sin(a) * d, layer: 2 });
-      }
-    }
-    buildFlower();
-
-    const flowParticles = [];
-    for (let i = 0; i < 50; i++) {
-      flowParticles.push({
-        angle: Math.random() * Math.PI * 2,
-        radius: 50 + Math.random() * 100,
-        speed: 0.002 + Math.random() * 0.004,
-        offset: Math.random() * Math.PI * 2,
-        size: 1.5 + Math.random() * 3
-      });
-    }
-
-    let completionParticles = [];
-    let showCompletion = false;
-
-    function drawFlower(scale) {
-      const baseRadius = 35 * scale;
-      const petalRadius = baseRadius * 0.55;
-
-      ctx.save();
-      ctx.translate(cx, cy);
-
-      const intensity = 0.4 + 0.6 * scale;
-      const r = Math.floor(220 + 35 * scale);
-      const g = Math.floor(200 + 55 * scale);
-      const b = Math.floor(180 + 40 * scale);
-      const color = `rgba(${r}, ${g}, ${b}`;
-
-      const glow = ctx.createRadialGradient(0, 0, 0, 0, 0, baseRadius * 5);
-      glow.addColorStop(0, `${color}, ${0.1 * intensity})`);
-      glow.addColorStop(0.5, `${color}, ${0.04 * intensity})`);
-      glow.addColorStop(1, 'transparent');
-      ctx.fillStyle = glow;
-      ctx.fillRect(-W/2, -H/2, W, H);
-
-      flowerPetals.forEach((petal, i) => {
-        const t = time * 0.008;
-        const breathe = 1 + 0.08 * Math.sin(t + petal.layer * 0.5 + i * 0.3);
-        const px = petal.x * baseRadius * breathe;
-        const py = petal.y * baseRadius * breathe;
-        
-        const petalGlow = ctx.createRadialGradient(px, py, 0, px, py, petalRadius);
-        petalGlow.addColorStop(0, `${color}, ${0.05 * intensity})`);
-        petalGlow.addColorStop(1, 'transparent');
-        ctx.fillStyle = petalGlow;
-        ctx.beginPath();
-        ctx.arc(px, py, petalRadius, 0, Math.PI * 2);
-        ctx.fill();
-        
-        ctx.beginPath();
-        ctx.arc(px, py, petalRadius, 0, Math.PI * 2);
-        ctx.strokeStyle = `${color}, ${0.1 * intensity})`;
-        ctx.lineWidth = 0.6;
-        ctx.stroke();
-      });
-
-      flowParticles.forEach(p => {
-        const t = time * p.speed + p.offset;
-        const wave = Math.sin(t * 2) * 15 * scale;
-        const r = p.radius * scale + wave;
-        const a = p.angle + t * 0.5;
-        ctx.beginPath();
-        ctx.arc(Math.cos(a) * r, Math.sin(a) * r, p.size * scale, 0, Math.PI * 2);
-        ctx.fillStyle = `${color}, ${0.35 * intensity})`;
-        ctx.fill();
-      });
-
-      ctx.beginPath();
-      ctx.arc(0, 0, 4 * scale, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(255, 255, 255, ${0.8 + 0.2 * scale})`;
-      ctx.fill();
-      
-      const coreGlow = ctx.createRadialGradient(0, 0, 0, 0, 0, 18 * scale);
-      coreGlow.addColorStop(0, `${color}, ${0.25 * intensity})`);
-      coreGlow.addColorStop(1, 'transparent');
-      ctx.fillStyle = coreGlow;
-      ctx.beginPath();
-      ctx.arc(0, 0, 18 * scale, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.restore();
-    }
-
-    function drawCompletion() {
-      if (!showCompletion || completionParticles.length === 0) return;
-      completionParticles = completionParticles.filter(p => {
-        p.x += p.vx;
-        p.y += p.vy;
-        p.vy += 0.1;
-        p.life -= 0.012;
-        p.size *= 0.98;
-        if (p.life > 0) {
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-          ctx.fillStyle = `rgba(255, 215, 0, ${p.life})`;
-          ctx.fill();
-          return true;
-        }
-        return false;
-      });
-    }
-
-    function spawnCompletionParticles() {
-      completionParticles = [];
-      for (let i = 0; i < 120; i++) {
-        const angle = Math.random() * Math.PI * 2;
-        const speed = 2 + Math.random() * 7;
-        completionParticles.push({
-          x: cx, y: cy,
-          vx: Math.cos(angle) * speed,
-          vy: Math.sin(angle) * speed - 3,
-          size: 2 + Math.random() * 5,
-          life: 1
-        });
-      }
-    }
-
-    function animate() {
-      ctx.fillStyle = '#000';
-      ctx.fillRect(0, 0, W, H);
-      time++;
-
-      let target;
-      if (breathPhase === 'idle') {
-        target = 0.3;
-      } else if (breathPhase === 'inhale') {
-        breathProgress += breathSpeed;
-        if (breathProgress >= 1) { breathProgress = 1; breathPhase = 'hold'; }
-        const t = breathProgress;
-        target = 0.3 + 0.7 * (t * t * (3 - 2 * t));
-      } else if (breathPhase === 'hold') {
-        target = 1;
-      } else {
-        breathProgress -= breathSpeed;
-        if (breathProgress <= 0) { breathProgress = 0; breathPhase = 'idle'; }
-        const t = breathProgress;
-        target = 0.3 + 0.7 * (t * t * (3 - 2 * t));
-      }
-
-      currentScale += (target - currentScale) * 0.04;
-      drawFlower(currentScale);
-      drawCompletion();
-      updateAmbience(currentScale);
-
-      requestAnimationFrame(animate);
-    }
-    animate();
-
-    // ===== HAPTIC =====
-    function haptic(p) { if (navigator.vibrate) navigator.vibrate(p); }
-
-    // ===== GAME STATE =====
-    const LEVEL_NAMES = [
-      "Novice", "Wealth Seeker", "Empire Builder", "Millionaire Mind", 
-      "Wealth Architect", "Billionaire Visionary", "Trillionaire", 
-      "Dynasty Founder", "Wealth Deity", "Infinite"
-    ];
-
-    let game = { 
-      streak: 0, lastDate: null, totalMinutes: 0, sessions: 0, 
-      moods: {}, score: 0, level: 1, xp: 0, bestStreak: 0
+    // Techniques configuration
+    const techniques = {
+      box: { inhale: 4, hold: 4, exhale: 4, hold2: 4, name: 'Box Breathing' },
+      '478': { inhale: 4, hold: 7, exhale: 8, hold2: 0, name: '4-7-8 Relax' },
+      coherent: { inhale: 5.5, hold: 0, exhale: 5.5, hold2: 0, name: 'Coherent' },
+      simple: { inhale: 4, hold: 0, exhale: 6, hold2: 0, name: 'Simple' }
     };
-    const saved = localStorage.getItem('trillionaire_v2');
-    if (saved) game = JSON.parse(saved);
 
-    function save() { localStorage.setItem('trillionaire_v2', JSON.stringify(game)); }
+    let currentTechnique = 'box';
+    let duration = 5; // minutes
+    let isPlaying = false;
+    let isSoundOn = false;
+    let timeRemaining = duration * 60;
+    let breathingInterval = null;
+    let timerInterval = null;
+    let audioCtx = null;
+    let oscillator = null;
+    let gainNode = null;
 
-    function getLevelName(lvl) {
-      return LEVEL_NAMES[Math.min(lvl - 1, LEVEL_NAMES.length - 1)] || "Infinite";
+    const orb = document.getElementById('orb');
+    const phaseLabel = document.getElementById('phaseLabel');
+    const timer = document.getElementById('timer');
+    const playBtn = document.getElementById('playBtn');
+    const soundBtn = document.getElementById('soundBtn');
+
+    function startApp() {
+      document.getElementById('startOverlay').classList.add('hidden');
     }
 
-    function getXpForLevel(lvl) {
-      return lvl * 100;
+    function setDuration(min) {
+      duration = min;
+      timeRemaining = min * 60;
+      updateTimerDisplay();
+      document.querySelectorAll('.duration-btn').forEach(btn => {
+        btn.classList.toggle('active', parseInt(btn.dataset.min) === min);
+      });
     }
 
-    function updateXpBar() {
-      const xpNeeded = getXpForLevel(game.level);
-      const pct = Math.min((game.xp / xpNeeded) * 100, 100);
-      document.getElementById('xpFill').style.width = pct + '%';
-    }
-
-    function showFloatingXp(amount, x, y) {
-      const el = document.createElement('div');
-      el.className = 'float-xp';
-      el.textContent = '+' + amount + ' XP';
-      el.style.left = (x || cx) + 'px';
-      el.style.top = (y || cy - 50) + 'px';
-      document.body.appendChild(el);
-      requestAnimationFrame(() => el.classList.add('animate'));
-      setTimeout(() => el.remove(), 1000);
-    }
-
-    function showCombo() {
-      const combo = document.getElementById('combo');
-      document.getElementById('comboNumber').textContent = game.streak;
-      combo.classList.add('show');
-      setTimeout(() => combo.classList.remove('show'), 2000);
-    }
-
-    function checkLevelUp() {
-      const xpNeeded = getXpForLevel(game.level);
-      if (game.xp >= xpNeeded) {
-        game.xp -= xpNeeded;
-        game.level++;
-        
-        document.getElementById('levelupLevel').textContent = game.level;
-        document.getElementById('levelupName').textContent = getLevelName(game.level);
-        document.getElementById('levelupOverlay').classList.add('open');
-        playLevelUpSound();
-        
-        return true;
+    function setTechnique(tech) {
+      currentTechnique = tech;
+      document.querySelectorAll('.technique-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tech === tech);
+      });
+      if (isPlaying) {
+        stopBreathing();
+        startBreathing();
       }
-      return false;
     }
 
-    function checkStreak() {
-      const today = new Date().toDateString();
-      const yesterday = new Date(Date.now() - 86400000).toDateString();
-      let streakBonus = 0;
-      
-      if (game.lastDate === today) {
-        // Already meditated today, just add XP
-      } else if (game.lastDate === yesterday) {
-        game.streak++;
-        streakBonus = game.streak * 10;
-        if (game.streak > game.bestStreak) game.bestStreak = game.streak;
+    function updateTimerDisplay() {
+      const min = Math.floor(timeRemaining / 60);
+      const sec = timeRemaining % 60;
+      timer.textContent = `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
+    }
+
+    function togglePlay() {
+      if (isPlaying) {
+        pauseSession();
       } else {
-        game.streak = 1;
+        startSession();
       }
-      
-      game.lastDate = today;
-      game.sessions++;
-      game.totalMinutes += duration;
-      
-      const baseXp = duration * 10;
-      const timeBonus = duration >= 5 ? 50 : 0;
-      const totalXp = baseXp + streakBonus + timeBonus;
-      
-      game.xp += totalXp;
-      game.score += totalXp;
-      
-      save();
-      return { totalXp, streakBonus, timeBonus };
     }
 
-    function updateStats() {
-      document.getElementById('streakCount').textContent = game.streak;
-      document.getElementById('scoreDisplay').textContent = game.score;
-      document.getElementById('levelDisplay').textContent = game.level;
-      updateXpBar();
-    }
-    updateStats();
-
-    // ===== AFFIRMATIONS =====
-    const affirmations = [
-      'I am a trillion dollar empire',
-      'I attract billion dollar deals effortlessly',
-      'I was born to build generational wealth',
-      'Money multiplies in my presence daily',
-      'I command trillion dollar markets',
-      'My net worth compounds exponentially',
-      'I create opportunities that create billionaires',
-      'My wealth builds empires while I sleep',
-      'I am the architect of infinite wealth',
-      'I am the standard for global wealth'
-    ];
-
-    let currentAffirmation = 0;
-    function cycleAffirmation() {
-      affirmationEl.textContent = affirmations[currentAffirmation];
-      currentAffirmation = (currentAffirmation + 1) % affirmations.length;
+    function startSession() {
+      isPlaying = true;
+      playBtn.textContent = 'Pause';
+      playBtn.classList.add('active');
+      document.getElementById('completeMessage').classList.remove('visible');
+      startBreathing();
+      startTimer();
+      if (isSoundOn) startTone();
     }
 
-    // ===== STATE =====
-    let playing = false;
-    let duration = 1;
-    let bpm = 6;
-    let timeLeft = 60;
-    let breathCycle = null;
-    let countdown = null;
-
-    const phaseEl = document.getElementById('phase');
-    const timerEl = document.getElementById('timer');
-    const hintEl = document.getElementById('hint');
-    const statsEl = document.getElementById('stats');
-    const affirmationEl = document.getElementById('affirmation');
-    const completionEl = document.getElementById('completion');
-    const trackerOverlay = document.getElementById('trackerOverlay');
-    const overlay = document.getElementById('overlay');
-    const xpBar = document.getElementById('xpBar');
-
-    // Settings
-    document.getElementById('settingsBtn').addEventListener('click', (e) => {
-      e.stopPropagation();
-      overlay.classList.add('open');
-    });
-
-    document.getElementById('closeBtn').addEventListener('click', () => {
-      overlay.classList.remove('open');
-    });
-
-    document.querySelectorAll('[data-dur]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        duration = parseInt(btn.dataset.dur);
-        timeLeft = duration * 60;
-        document.querySelectorAll('[data-dur]').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-      });
-    });
-
-    document.querySelectorAll('[data-bpm]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        bpm = parseInt(btn.dataset.bpm);
-        breathSpeed = (bpm / 60) * 0.008;
-        document.querySelectorAll('[data-bpm]').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-      });
-    });
-
-    document.querySelectorAll('[data-audio]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        audioMode = btn.dataset.audio;
-        if (audioMode !== 'off') initAudio();
-        document.querySelectorAll('[data-audio]').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-      });
-    });
-
-    document.getElementById('levelupBtn').addEventListener('click', () => {
-      document.getElementById('levelupOverlay').classList.remove('open');
-      showTracker();
-    });
-
-    // Main click handler - ONLY on canvas and body, not on buttons
-    document.getElementById('c').addEventListener('click', (e) => {
-      e.stopPropagation();
-      if (overlay.classList.contains('open')) return;
-      if (showCompletion) return;
-      if (document.getElementById('levelupOverlay').classList.contains('open')) return;
-      if (trackerOverlay.classList.contains('open')) return;
-      playing ? pause() : start();
-    });
-
-    document.body.addEventListener('click', (e) => {
-      if (e.target.closest('.settings-btn')) return;
-      if (e.target.closest('.overlay')) return;
-      if (e.target.closest('.tracker-overlay')) return;
-      if (e.target.closest('.levelup-overlay')) return;
-      if (overlay.classList.contains('open')) return;
-      if (showCompletion) return;
-      if (document.getElementById('levelupOverlay').classList.contains('open')) return;
-      if (trackerOverlay.classList.contains('open')) return;
-      playing ? pause() : start();
-    });
-
-    function updateTimer() {
-      const m = Math.floor(timeLeft / 60);
-      const s = timeLeft % 60;
-      timerEl.textContent = `${m}:${s.toString().padStart(2,'0')}`;
+    function pauseSession() {
+      isPlaying = false;
+      playBtn.textContent = 'Resume';
+      playBtn.classList.remove('active');
+      stopBreathing();
+      clearInterval(timerInterval);
+      stopTone();
     }
 
-    function start() {
-      playing = true;
-      hintEl.style.display = 'none';
-      phaseEl.classList.add('visible');
-      timerEl.classList.add('visible');
-      statsEl.classList.add('visible');
-      xpBar.classList.add('visible');
-      affirmationEl.classList.add('visible');
-      cycleAffirmation();
-      haptic([80, 40, 160]);
-      if (audioMode !== 'off') startAmbience();
-      timeLeft = duration * 60;
-      updateTimer();
-      startBreath();
-      countdown = setInterval(() => {
-        timeLeft--;
-        updateTimer();
-        if (timeLeft <= 0) finish();
+    function resetSession() {
+      isPlaying = false;
+      playBtn.textContent = 'Start';
+      playBtn.classList.remove('active');
+      stopBreathing();
+      clearInterval(timerInterval);
+      timeRemaining = duration * 60;
+      updateTimerDisplay();
+      phaseLabel.textContent = 'Ready';
+      orb.style.transform = 'scale(1)';
+      orb.className = 'orb';
+      document.getElementById('completeMessage').classList.remove('visible');
+      stopTone();
+    }
+
+    function startTimer() {
+      timerInterval = setInterval(() => {
+        timeRemaining--;
+        updateTimerDisplay();
+        if (timeRemaining <= 0) {
+          completeSession();
+        }
       }, 1000);
     }
 
-    function pause() {
-      playing = false;
-      hintEl.style.display = 'block';
-      phaseEl.classList.remove('visible');
-      timerEl.classList.remove('visible');
-      statsEl.classList.remove('visible');
-      xpBar.classList.remove('visible');
-      affirmationEl.classList.remove('visible');
-      haptic([100, 50, 50]);
-      stopBreath();
-      clearInterval(countdown);
-      if (audioMode !== 'off') stopAmbience();
+    function completeSession() {
+      pauseSession();
+      playBtn.textContent = 'Start';
+      document.getElementById('completeMessage').classList.add('visible');
+      timeRemaining = duration * 60;
+      updateTimerDisplay();
     }
 
-    function finish() {
-      const xpResult = checkStreak();
-      updateStats();
-      haptic([100, 50, 100, 50, 200, 100, 400]);
-      if (audioMode !== 'off') {
-        stopAmbience();
-        playBell();
-      }
-      pause();
-      
-      showFloatingXp(xpResult.totalXp, cx, cy - 30);
-      
-      if (game.streak > 1) {
-        setTimeout(() => showCombo(), 500);
-      }
-      
-      showCompletion = true;
-      spawnCompletionParticles();
-      completionEl.classList.add('show');
-      
+    function startBreathing() {
+      const tech = techniques[currentTechnique];
+      runBreathCycle(tech);
+      const cycleTime = (tech.inhale + tech.hold + tech.exhale + tech.hold2) * 1000;
+      breathingInterval = setInterval(() => runBreathCycle(tech), cycleTime);
+    }
+
+    function runBreathCycle(tech) {
+      // Inhale
+      phaseLabel.textContent = 'Inhale';
+      orb.style.transition = `transform ${tech.inhale}s ease-in-out`;
+      orb.style.transform = 'scale(1.8)';
+
       setTimeout(() => {
-        showCompletion = false;
-        completionEl.classList.remove('show');
-        
-        if (checkLevelUp()) {
-          // Level up shown, tracker will show after
-        } else {
-          showTracker();
+        if (!isPlaying) return;
+        // Hold
+        if (tech.hold > 0) {
+          phaseLabel.textContent = 'Hold';
         }
-      }, 2500);
-    }
-
-    // Tracker
-    const encouragingMessages = [
-      "You are building a trillion dollar legacy",
-      "Consistency creates dynasties",
-      "Your empire thanks you",
-      "Small rituals, empire scale results",
-      "You are architecting a trillion dollar mind",
-      "Empire building is your nature",
-      "Every session compounds your empire",
-      "You are becoming the magnet for global wealth"
-    ];
-
-    function showTracker() {
-      const grid = document.getElementById('trackerGrid');
-      grid.innerHTML = '';
-      const today = new Date();
-      const days = ['S','M','T','W','T','F','S'];
-      
-      for (let i = 0; i < 7; i++) {
-        const d = new Date(today);
-        d.setDate(today.getDate() - today.getDay() + i);
-        const dateStr = d.toDateString();
-        const isToday = i === today.getDay();
-        const isDone = game.moods[dateStr] !== undefined;
-        
-        const dayEl = document.createElement('div');
-        dayEl.className = 'tracker-day' + (isDone ? ' done' : '') + (isToday ? ' today' : '');
-        dayEl.textContent = days[i];
-        grid.appendChild(dayEl);
-      }
-      
-      const streak = game.streak || 0;
-      let message;
-      if (streak === 0) message = "Start your empire today";
-      else if (streak === 1) message = "First step to abundance";
-      else if (streak < 3) message = encouragingMessages[0];
-      else if (streak < 7) message = encouragingMessages[1];
-      else if (streak < 14) message = encouragingMessages[2];
-      else if (streak < 30) message = encouragingMessages[3];
-      else message = encouragingMessages[4];
-      
-      document.getElementById('trackerMessage').textContent = message;
-      trackerOverlay.classList.add('open');
-    }
-
-    document.getElementById('trackerBtn').addEventListener('click', () => {
-      trackerOverlay.classList.remove('open');
-      hintEl.style.display = 'block';
-    });
-
-    function startBreath() {
-      const cycleMs = (60 / bpm) * 1000;
-      const inhaleMs = cycleMs * 0.35;
-      const holdInMs = cycleMs * 0.15;
-      const exhaleMs = cycleMs * 0.35;
-
-      function breathe() {
-        if (!playing) return;
-
-        phaseEl.textContent = 'Inhale';
-        haptic([50, 30, 80, 30, 120]);
-        breathPhase = 'inhale';
-        breathProgress = 0;
-        cycleAffirmation();
 
         setTimeout(() => {
-          if (!playing) return;
-          phaseEl.textContent = 'Hold';
-          breathPhase = 'hold';
-          haptic([200]);
+          if (!isPlaying) return;
+          // Exhale
+          phaseLabel.textContent = 'Exhale';
+          orb.style.transition = `transform ${tech.exhale}s ease-in-out`;
+          orb.style.transform = 'scale(1)';
 
           setTimeout(() => {
-            if (!playing) return;
-            phaseEl.textContent = 'Exhale';
-            breathPhase = 'exhale';
-            breathProgress = 1;
-            haptic([120, 30, 80, 30, 50]);
+            if (!isPlaying) return;
+            // Hold 2
+            if (tech.hold2 > 0) {
+              phaseLabel.textContent = 'Hold';
+            }
+          }, tech.exhale * 1000);
+        }, tech.hold * 1000);
+      }, tech.inhale * 1000);
+    }
 
-            setTimeout(() => {
-              if (!playing) return;
-              breathPhase = 'idle';
-            }, exhaleMs);
-          }, holdInMs);
-        }, inhaleMs);
+    function stopBreathing() {
+      clearInterval(breathingInterval);
+      const timeouts = setTimeout(() => {}, 0);
+      for (let i = 0; i < timeouts; i++) {
+        clearTimeout(i);
       }
-
-      breathe();
-      breathCycle = setInterval(breathe, cycleMs);
     }
 
-    function stopBreath() {
-      clearInterval(breathCycle);
-      const max = setTimeout(() => {}, 0);
-      for (let i = 0; i < max; i++) clearTimeout(i);
+    // Audio tone generation
+    function toggleSound() {
+      isSoundOn = !isSoundOn;
+      soundBtn.textContent = isSoundOn ? '🔊' : '🔇';
+      soundBtn.classList.toggle('active', isSoundOn);
+      if (isSoundOn && isPlaying) {
+        startTone();
+      } else {
+        stopTone();
+      }
     }
 
-    updateTimer();
+    function startTone() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      oscillator = audioCtx.createOscillator();
+      gainNode = audioCtx.createGain();
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      oscillator.frequency.value = 174; // Deep relaxation frequency
+      oscillator.type = 'sine';
+      gainNode.gain.value = 0.03;
+      oscillator.start();
+    }
+
+    function stopTone() {
+      if (oscillator) {
+        oscillator.stop();
+        oscillator = null;
+      }
+    }
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'Space') {
+        e.preventDefault();
+        togglePlay();
+      }
+      if (e.code === 'KeyR') {
+        resetSession();
+      }
+      if (e.code === 'KeyM') {
+        toggleSound();
+      }
+    });
+
+    // Initialize
+    updateTimerDisplay();
   </script>
 </body>
 </html>
