@@ -1105,59 +1105,81 @@
     }
 
     function drawCoolOrb(scale) {
-      const baseRadius = 50 * scale;
+      const baseRadius = 42 * scale;
+      const petalRadius = baseRadius * 0.48;
       const intensity = 0.3 + 0.7 * scale;
-      const pulse = 0.5 + 0.5 * Math.sin(time * 0.02);
 
       ctx.save();
       ctx.translate(cx, cy);
 
-      // Dynamic color based on breath phase
-      let hue = 45; // Gold base
-      if (breathPhase === 'inhale') hue = 50 + scale * 15;
-      else if (breathPhase === 'hold') hue = 35;
-      else if (breathPhase === 'exhale') hue = 55 - scale * 10;
+      const r = Math.floor(230 + 25 * scale);
+      const g = Math.floor(200 + 55 * scale);
+      const b = Math.floor(165 + 45 * scale);
+      const color = `rgba(${r}, ${g}, ${b}`;
 
-      const color = `hsla(${hue}, 90%, 65%`;
-      const coreColor = `hsla(${hue}, 100%, 80%`;
-
-      // Massive outer glow
-      const outerGlow = ctx.createRadialGradient(0, 0, 0, 0, 0, baseRadius * 8);
-      outerGlow.addColorStop(0, `${color}, ${0.12 * intensity})`);
-      outerGlow.addColorStop(0.2, `${color}, ${0.06 * intensity})`);
-      outerGlow.addColorStop(0.5, `${color}, ${0.015 * intensity})`);
-      outerGlow.addColorStop(1, 'transparent');
-      ctx.fillStyle = outerGlow;
+      // Massive outer glow (enhanced from original)
+      const glow = ctx.createRadialGradient(0, 0, 0, 0, 0, baseRadius * 7);
+      glow.addColorStop(0, `${color}, ${0.1 * intensity})`);
+      glow.addColorStop(0.35, `${color}, ${0.035 * intensity})`);
+      glow.addColorStop(1, 'transparent');
+      ctx.fillStyle = glow;
       ctx.fillRect(-W/2, -H/2, W, H);
 
-      // Pulsing rings (3D tilted effect)
-      orbRings.forEach((ring, i) => {
-        const t = time * 0.01 + ring.phase;
-        const ringPulse = 1 + 0.15 * Math.sin(t * ring.speed) * scale;
-        const r = ring.radius * scale * ringPulse;
-        const tiltY = Math.sin(t * 0.3) * ring.tilt;
-
-        ctx.save();
-        ctx.scale(1, 0.4 + tiltY); // Create 3D tilt
-        ctx.rotate(t * ring.speed * 0.1);
+      // Threads (original)
+      threads.forEach((thread, i) => {
+        const t = time * 0.008 + thread.phase;
+        const pulse = 0.5 + 0.5 * Math.sin(t * thread.speed);
+        const len = thread.length * scale * (0.8 + 0.2 * pulse);
+        const x1 = Math.cos(thread.angle) * baseRadius * 0.8;
+        const y1 = Math.sin(thread.angle) * baseRadius * 0.8;
+        const x2 = Math.cos(thread.angle) * (baseRadius * 0.8 + len);
+        const y2 = Math.sin(thread.angle) * (baseRadius * 0.8 + len);
 
         ctx.beginPath();
-        ctx.arc(0, 0, r, 0, Math.PI * 2);
-        ctx.strokeStyle = `${color}, ${0.08 * intensity * (1 - i * 0.15)})`;
-        ctx.lineWidth = 1.5 - i * 0.2;
-        ctx.stroke();
-
-        // Dashed arc overlay
-        ctx.beginPath();
-        ctx.arc(0, 0, r * 0.95, t, t + Math.PI * 1.2);
-        ctx.strokeStyle = `${color}, ${0.04 * intensity})`;
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.strokeStyle = `${color}, ${0.06 * intensity * pulse})`;
         ctx.lineWidth = 0.5;
         ctx.stroke();
-
-        ctx.restore();
       });
 
-      // Energy spikes radiating outward
+      // Flower petals (original geometric flower)
+      flowerPetals.forEach((petal, i) => {
+        const t = time * 0.005;
+        const breathe = 1 + 0.05 * Math.sin(t + petal.layer * 0.35 + i * 0.2);
+        const px = petal.x * baseRadius * breathe;
+        const py = petal.y * baseRadius * breathe;
+        const pr = petalRadius * petal.size;
+
+        const petalGlow = ctx.createRadialGradient(px, py, 0, px, py, pr * 1.6);
+        petalGlow.addColorStop(0, `${color}, ${0.04 * intensity})`);
+        petalGlow.addColorStop(1, 'transparent');
+        ctx.fillStyle = petalGlow;
+        ctx.beginPath();
+        ctx.arc(px, py, pr * 1.6, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(px, py, pr, 0, Math.PI * 2);
+        ctx.strokeStyle = `${color}, ${0.08 * intensity})`;
+        ctx.lineWidth = 0.5;
+        ctx.stroke();
+      });
+
+      // Flow particles (original)
+      flowParticles.forEach(p => {
+        const t = time * p.speed + p.offset;
+        const wave = Math.sin(t * 2) * 10 * scale;
+        const r = p.radius * scale + wave;
+        const a = p.angle + t * 0.35;
+        const alpha = 0.18 + 0.12 * Math.sin(t * 2.5);
+        ctx.beginPath();
+        ctx.arc(Math.cos(a) * r, Math.sin(a) * r, p.size * scale, 0, Math.PI * 2);
+        ctx.fillStyle = `${color}, ${alpha * intensity})`;
+        ctx.fill();
+      });
+
+      // Energy spikes (NEW - subtle radiating lines)
       energySpikes.forEach((spike, i) => {
         const t = time * 0.015 + spike.phase;
         const spikePulse = 0.3 + 0.7 * Math.sin(t * spike.speed) * scale;
@@ -1169,136 +1191,46 @@
         const x2 = Math.cos(angle) * (baseRadius * 0.9 + len);
         const y2 = Math.sin(angle) * (baseRadius * 0.9 + len);
 
-        // Main spike
         ctx.beginPath();
         ctx.moveTo(x1, y1);
         ctx.lineTo(x2, y2);
-        ctx.strokeStyle = `${color}, ${0.12 * intensity * spikePulse})`;
-        ctx.lineWidth = spike.width * scale;
+        ctx.strokeStyle = `${color}, ${0.08 * intensity * spikePulse})`;
+        ctx.lineWidth = spike.width * scale * 0.5;
         ctx.lineCap = 'round';
         ctx.stroke();
-
-        // Spike glow
-        const spikeGlow = ctx.createRadialGradient(x2, y2, 0, x2, y2, len * 0.5);
-        spikeGlow.addColorStop(0, `${color}, ${0.1 * intensity * spikePulse})`);
-        spikeGlow.addColorStop(1, 'transparent');
-        ctx.fillStyle = spikeGlow;
-        ctx.beginPath();
-        ctx.arc(x2, y2, len * 0.5, 0, Math.PI * 2);
-        ctx.fill();
       });
 
-      // Orbiting particles with trails
-      orbParticles.forEach((p, i) => {
-        const t = time * p.speed + p.offset;
-        const wave = Math.sin(t * 3) * 15 * scale;
-        const r = p.radius * scale + wave;
-        const a = p.angle + t * 0.5;
-        const x = Math.cos(a) * r;
-        const y = Math.sin(a) * r;
-        const alpha = 0.2 + 0.15 * Math.sin(t * 2) * scale;
-        const size = p.size * scale * (0.8 + 0.4 * Math.sin(t * 4));
-
-        // Particle trail
-        for (let j = 1; j <= 3; j++) {
-          const trailA = a - j * 0.05;
-          const trailR = r - j * 2;
-          const trailAlpha = alpha * (1 - j * 0.3) * 0.3;
-          ctx.beginPath();
-          ctx.arc(Math.cos(trailA) * trailR, Math.sin(trailA) * trailR, size * (1 - j * 0.2), 0, Math.PI * 2);
-          ctx.fillStyle = `${color}, ${trailAlpha * intensity})`;
-          ctx.fill();
-        }
-
-        // Main particle
-        ctx.beginPath();
-        ctx.arc(x, y, size, 0, Math.PI * 2);
-        ctx.fillStyle = `${color}, ${alpha * intensity})`;
-        ctx.fill();
-
-        // Particle glow for larger particles
-        if (p.size > 1.5) {
-          const pGlow = ctx.createRadialGradient(x, y, 0, x, y, size * 4);
-          pGlow.addColorStop(0, `${color}, ${0.15 * alpha * intensity})`);
-          pGlow.addColorStop(1, 'transparent');
-          ctx.fillStyle = pGlow;
-          ctx.beginPath();
-          ctx.arc(x, y, size * 4, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      });
-
-      // Inner energy field (rotating)
-      const fieldRotation = time * 0.005;
-      for (let i = 0; i < 8; i++) {
-        const angle = (i / 8) * Math.PI * 2 + fieldRotation;
-        const fieldR = baseRadius * (0.4 + 0.3 * Math.sin(time * 0.01 + i));
-        const fx = Math.cos(angle) * fieldR;
-        const fy = Math.sin(angle) * fieldR;
-
-        const fieldGlow = ctx.createRadialGradient(fx, fy, 0, fx, fy, baseRadius * 0.6);
-        fieldGlow.addColorStop(0, `${color}, ${0.06 * intensity})`);
-        fieldGlow.addColorStop(1, 'transparent');
-        ctx.fillStyle = fieldGlow;
-        ctx.beginPath();
-        ctx.arc(fx, fy, baseRadius * 0.6, 0, Math.PI * 2);
-        ctx.fill();
-      }
-
-      // Core orb
-      const coreRadius = baseRadius * 0.35;
-      const corePulse = 1 + 0.1 * Math.sin(time * 0.03) * scale;
-
-      // Core glow layers
-      const coreGlow1 = ctx.createRadialGradient(0, 0, 0, 0, 0, coreRadius * 6);
-      coreGlow1.addColorStop(0, `${coreColor}, ${0.25 * intensity})`);
-      coreGlow1.addColorStop(0.3, `${coreColor}, ${0.08 * intensity})`);
-      coreGlow1.addColorStop(1, 'transparent');
-      ctx.fillStyle = coreGlow1;
+      // Core (original + enhanced)
       ctx.beginPath();
-      ctx.arc(0, 0, coreRadius * 6, 0, Math.PI * 2);
+      ctx.arc(0, 0, 5 * scale, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(255, 255, 255, ${0.75 + 0.25 * scale})`;
       ctx.fill();
 
-      const coreGlow2 = ctx.createRadialGradient(0, 0, 0, 0, 0, coreRadius * 3);
-      coreGlow2.addColorStop(0, `${coreColor}, ${0.4 * intensity})`);
-      coreGlow2.addColorStop(0.5, `${coreColor}, ${0.1 * intensity})`);
-      coreGlow2.addColorStop(1, 'transparent');
-      ctx.fillStyle = coreGlow2;
+      const coreGlow = ctx.createRadialGradient(0, 0, 0, 0, 0, 24 * scale);
+      coreGlow.addColorStop(0, `${color}, ${0.2 * intensity})`);
+      coreGlow.addColorStop(1, 'transparent');
+      ctx.fillStyle = coreGlow;
       ctx.beginPath();
-      ctx.arc(0, 0, coreRadius * 3, 0, Math.PI * 2);
+      ctx.arc(0, 0, 24 * scale, 0, Math.PI * 2);
       ctx.fill();
 
-      // Solid core
-      ctx.beginPath();
-      ctx.arc(0, 0, coreRadius * corePulse, 0, Math.PI * 2);
-      ctx.fillStyle = `${coreColor}, ${0.9 * intensity})`;
-      ctx.fill();
+      // Subtle cross flare (NEW - very subtle)
+      const flareLen = baseRadius * 3 * scale;
+      const flareAlpha = 0.08 * intensity * (0.5 + 0.5 * Math.sin(time * 0.025));
 
-      // Bright center dot
-      ctx.beginPath();
-      ctx.arc(0, 0, coreRadius * 0.3 * corePulse, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(255, 255, 255, ${0.95 * intensity})`;
-      ctx.fill();
-
-      // Cross flare
-      const flareLen = coreRadius * 4 * scale;
-      const flareAlpha = 0.15 * intensity * (0.5 + 0.5 * Math.sin(time * 0.025));
-
-      // Horizontal flare
       const hGrad = ctx.createLinearGradient(-flareLen, 0, flareLen, 0);
       hGrad.addColorStop(0, 'transparent');
-      hGrad.addColorStop(0.5, `${coreColor}, ${flareAlpha})`);
+      hGrad.addColorStop(0.5, `${color}, ${flareAlpha})`);
       hGrad.addColorStop(1, 'transparent');
       ctx.fillStyle = hGrad;
-      ctx.fillRect(-flareLen, -1, flareLen * 2, 2);
+      ctx.fillRect(-flareLen, -0.5, flareLen * 2, 1);
 
-      // Vertical flare
       const vGrad = ctx.createLinearGradient(0, -flareLen, 0, flareLen);
       vGrad.addColorStop(0, 'transparent');
-      vGrad.addColorStop(0.5, `${coreColor}, ${flareAlpha})`);
+      vGrad.addColorStop(0.5, `${color}, ${flareAlpha})`);
       vGrad.addColorStop(1, 'transparent');
       ctx.fillStyle = vGrad;
-      ctx.fillRect(-1, -flareLen, 2, flareLen * 2);
+      ctx.fillRect(-0.5, -flareLen, 1, flareLen * 2);
 
       ctx.restore();
     }
